@@ -1,0 +1,58 @@
+_name=myMPD
+pkgname=mympd
+pkgver=13.0.5
+pkgrel=1
+pkgdesc="A standalone and lightweight web-based MPD client"
+arch=(x86_64)
+url="https://github.com/jcorporation/myMPD"
+license=(GPL-3.0-or-later)
+depends=(
+  glibc
+  lua
+)
+makedepends=(
+  cmake
+  flac
+  jq
+  openssl
+  pcre2
+  perl
+)
+source=(https://github.com/jcorporation/$pkgname/archive/v$pkgver/$pkgname-v$pkgver.tar.gz)
+sha512sums=('357d4b51a27af6dd3077cfd9fab430eb71cfa8b50a31443917df870a52a5fbc0f71c8198abed46334747f882c50e39fbbd2a279dd904b2cfe5cf838f77889150')
+b2sums=('ba0c56a3ff42faaeee742ae6c8cd6a6f2b4d81880d8238c5d4c8b81c9ad96cbaa373a0fe79101cd31f127d2ab0f33bfec6127d88e66c25b8d016be7bf0287d48')
+
+build() {
+local cmake_options=(
+	-B build
+	-D CMAKE_BUILD_TYPE=None
+	-D CMAKE_INSTALL_PREFIX=/usr
+	-D MYMPD_ENABLE_FLAC=ON
+	-D MYMPD_ENABLE_IPV6=OFF
+	-D MYMPD_ENABLE_LIBID3TAG=OFF
+	-D MYMPD_ENABLE_MANPAGES=OFF
+	-D MYMPD_ENABLE_DOC=OFF
+	-D MYMPD_ENABLE_DOC_HTML=OFF
+	-D MYMPD_ENABLE_UBSAN=ON
+	-S $_name-$pkgver
+	-W no-dev
+)
+
+  cmake "${cmake_options[@]}"
+  cmake --build build --verbose
+}
+
+check() {
+  ctest --test-dir build --output-on-failure
+}
+
+package() {
+  depends+=(
+    flac libFLAC.so
+    openssl libssl.so
+    pcre2 libpcre2-8.so
+  )
+
+  DESTDIR="$pkgdir" cmake --install build
+  install -vDm 644 $_name-$pkgver/{CHANGELOG,README}.md -t "$pkgdir/usr/share/doc/$pkgname/"
+}
